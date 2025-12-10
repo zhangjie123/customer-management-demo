@@ -29,6 +29,7 @@ def init_db() -> None:
         name VARCHAR(100) NOT NULL,
         phone VARCHAR(20) NOT NULL,
         gender ENUM('male', 'female') NOT NULL,
+        province VARCHAR(100) NOT NULL,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         UNIQUE KEY idx_customers_phone (phone),
@@ -36,6 +37,10 @@ def init_db() -> None:
         KEY idx_customers_created_at (created_at)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     """
+    migrations = [
+        # Add province for existing tables (ignore duplicate-column error 1060).
+        "ALTER TABLE customers ADD COLUMN province VARCHAR(100) NOT NULL DEFAULT '' AFTER gender",
+    ]
     indexes = [
         "CREATE UNIQUE INDEX idx_customers_phone ON customers(phone)",
         "CREATE INDEX idx_customers_name ON customers(name)",
@@ -45,6 +50,12 @@ def init_db() -> None:
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(ddl)
+            for statement in migrations:
+                try:
+                    cur.execute(statement)
+                except Error as exc:
+                    if getattr(exc, "errno", None) not in (1060,):  # duplicate column
+                        raise
             for statement in indexes:
                 try:
                     cur.execute(statement)
@@ -56,10 +67,10 @@ def init_db() -> None:
 
 def create_customer(data: Dict[str, str]) -> int:
     query = """
-        INSERT INTO customers (name, phone, gender)
-        VALUES (%s, %s, %s)
+        INSERT INTO customers (name, phone, gender, province)
+        VALUES (%s, %s, %s, %s)
     """
-    params = (data["name"], data["phone"], data["gender"])
+    params = (data["name"], data["phone"], data["gender"], data["province"])
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(query, params)
@@ -69,7 +80,7 @@ def create_customer(data: Dict[str, str]) -> int:
 
 def get_customer_by_id(customer_id: int) -> Optional[Dict]:
     query = """
-        SELECT id, name, phone, gender, created_at, updated_at
+        SELECT id, name, phone, gender, province, created_at, updated_at
         FROM customers
         WHERE id = %s
     """
@@ -82,7 +93,7 @@ def get_customer_by_id(customer_id: int) -> Optional[Dict]:
 def list_customers(page: int, page_size: int) -> Tuple[List[Dict], int]:
     offset = (page - 1) * page_size
     list_query = """
-        SELECT id, name, phone, gender, created_at, updated_at
+        SELECT id, name, phone, gender, province, created_at, updated_at
         FROM customers
         ORDER BY created_at DESC, id DESC
         LIMIT %s OFFSET %s
@@ -100,10 +111,10 @@ def list_customers(page: int, page_size: int) -> Tuple[List[Dict], int]:
 def update_customer(customer_id: int, data: Dict[str, str]) -> bool:
     query = """
         UPDATE customers
-        SET name = %s, phone = %s, gender = %s
+        SET name = %s, phone = %s, gender = %s, province = %s
         WHERE id = %s
     """
-    params = (data["name"], data["phone"], data["gender"], customer_id)
+    params = (data["name"], data["phone"], data["gender"], data["province"], customer_id)
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(query, params)
