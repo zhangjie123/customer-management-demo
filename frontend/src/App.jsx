@@ -8,6 +8,7 @@ const defaultForm = {
   name: "",
   phone: "",
   gender: "male",
+  province: "",
 };
 
 const genderOptions = [
@@ -81,7 +82,12 @@ export default function App() {
 
   const handleEdit = (customer) => {
     setEditingId(customer.id);
-    setForm({ name: customer.name, phone: customer.phone, gender: customer.gender });
+    setForm({
+      name: customer.name,
+      phone: customer.phone,
+      gender: customer.gender,
+      province: customer.province || "",
+    });
     setViewing(customer);
   };
 
@@ -154,6 +160,16 @@ export default function App() {
               <input name="phone" value={form.phone} onChange={handleInput} placeholder="手机或座机号" required />
             </label>
             <label>
+              所属省份
+              <input
+                name="province"
+                value={form.province}
+                onChange={handleInput}
+                placeholder="如：广东省、江苏省"
+                required
+              />
+            </label>
+            <label>
               性别
               <div className="radio-group">
                 {genderOptions.map((option) => (
@@ -215,6 +231,7 @@ export default function App() {
                   <tr>
                     <th>姓名</th>
                     <th>电话</th>
+                    <th>省份</th>
                     <th>性别</th>
                     <th>创建时间</th>
                     <th>操作</th>
@@ -225,6 +242,7 @@ export default function App() {
                     <tr key={customer.id}>
                       <td>{customer.name}</td>
                       <td>{customer.phone}</td>
+                      <td>{customer.province || "-"}</td>
                       <td>{customer.gender === "male" ? "男" : "女"}</td>
                       <td>{formatDate(customer.created_at)}</td>
                       <td className="actions">
@@ -257,6 +275,7 @@ export default function App() {
           <div className="detail-grid">
             <DetailItem label="姓名" value={viewing.name} />
             <DetailItem label="联系电话" value={viewing.phone} />
+            <DetailItem label="省份" value={viewing.province} />
             <DetailItem label="性别" value={viewing.gender === "male" ? "男" : "女"} />
             <DetailItem label="创建时间" value={formatDate(viewing.created_at)} />
             <DetailItem label="更新时间" value={formatDate(viewing.updated_at)} />

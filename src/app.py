@@ -32,15 +32,18 @@ def validate_customer_payload(payload: Dict[str, Any]):
     name = (payload.get("name") or "").strip()
     phone = (payload.get("phone") or "").strip()
     gender = (payload.get("gender") or "").strip().lower()
+    province = (payload.get("province") or "").strip()
 
     if not name:
         errors.append("姓名不能为空")
     if not phone:
         errors.append("联系电话不能为空")
     if gender not in ALLOWED_GENDERS:
-        errors.append("性别只能是 male 或 female")
+        errors.append("性别只能是 male 或 female（男/女）")
+    if not province:
+        errors.append("所属省份不能为空")
 
-    return errors, {"name": name, "phone": phone, "gender": gender}
+    return errors, {"name": name, "phone": phone, "gender": gender, "province": province}
 
 
 @app.route("/api/health", methods=["GET"])
